@@ -14,14 +14,21 @@ contract customer{
 
     mapping(string=>Customer) public customers;
 
-    // Modifier allow code to continue only if the customer is not there
-    modifier onlyCustomers(string memory _username){
+    // Modifier continue if the customer is not there
+    modifier noCustomers(string memory _username){
         require(customers[_username].Bank == address(0),"Customer is already present");
         _;
     }
 
+    // Modifier continue if customer is present
+    modifier onlyCustomers(string memory _username){
+        require(customers[_username].Bank != address(0),"Customer is not in database. Add customer.");
+        _;
+    }
+
+
     // Function to add customer
-    function addCustomer(string memory _username, string memory _customerData) public onlyCustomers(_username){        
+    function addCustomer(string memory _username, string memory _customerData) public noCustomers(_username){        
         // create customer record in struct
         customers[_username].username = _username;
         customers[_username].customerData = _customerData;
