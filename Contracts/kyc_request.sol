@@ -8,4 +8,7 @@ contract kyc_request{
         address bankAddress;
         string customerData;
     }
+
+    // Mapping to point to the struct using username
+    mapping(string=>kyc) public KYC;
 }

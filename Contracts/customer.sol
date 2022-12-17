@@ -28,12 +28,14 @@ contract customer{
 
 
     // Function to add customer
-    function addCustomer(string memory _username, string memory _customerData) public noCustomers(_username){        
+    function addCustomer(string memory _username, string memory _customerData, address sender) public noCustomers(_username){        
         // create customer record in struct
         customers[_username].username = _username;
         customers[_username].customerData = _customerData;
-        customers[_username].Bank = msg.sender;
-        
+        customers[_username].Bank = sender;
+        customers[_username].kycStatus = false;
+        customers[_username].Upvotes = 0;        
+        customers[_username].Downvotes = 0;        
     }
 
     // Function to view customer
@@ -43,5 +45,19 @@ contract customer{
             customers[_username].customerData,
             customers[_username].Bank
         );
+    }
+
+    // Function to modify customer information
+    function modifyCustomer(string memory _username, string memory _customerData) public onlyCustomers(_username){
+        customers[_username].customerData = _customerData;
+    }
+
+    // Function to upvote customer
+    function upVote(string memory _username)public onlyCustomers(_username){
+        customers[_username].Upvotes++;
+    }
+    // Function to downvote customer
+    function downVote(string memory _username)public onlyCustomers(_username){
+        customers[_username].Downvotes++;
     }
 }
