@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
 contract KYC{
@@ -86,6 +86,53 @@ contract KYC{
         bankCounter = 0;
     }
 
+    // Helper functions
+    // Convert string to bytes32
+    function convertStr(string memory _source) public pure returns (bytes32 res){
+        assembly{
+            res := mload(add(_source,32))
+        }
+    }
+
+    // Function to modify isAllowedToVote
+    function validBank(address _bnkAddress) internal {
+        require(banks[_bnkAddress].complaintsReported > bankCounter/2);
+        banks[_bnkAddress].isAllowedToVote = false;
+    }
+
+    // Function to validate customer
+    function validateCustomer(string memory _name) public isBank(msg.sender) onlyCustomers(_name) {
+        if (bankCounter>5){
+            if(customers[_name].Downvotes > bankCounter/3){
+                customers[_name].kycStatus = false;
+            }
+        }
+        
+        if(customers[_name].Upvotes > customers[_name].Downvotes){
+            customers[_name].kycStatus = true;
+        }
+    }
+
+    // Function to Verify submitted KYC
+    function verifyKYC(string memory _name) public isBank(msg.sender) onlyCustomers(_name){
+        if(convertStr(customers[_name].customerData) != convertStr(kyc_request[_name].customerData)){
+            // KYC verification has failed. Set status to false, downvote customer and report bank
+            customers[_name].kycStatus = false;
+            downVote(_name);
+
+            address bnk = customers[_name].Bank;
+            
+            banks[bnk].complaintsReported++;
+            validBank(bnk);
+            
+        } else {
+        // KYC is valid, set customer kyc status to true
+        customers[_name].kycStatus = true;
+        upVote(_name);
+        }
+    }
+
+    // Functions for Bank Interface
     // Function to add customer
     function addCustomer(string memory _username, string memory _customerData) public noCustomers(_username) isBank(msg.sender){        
         // create customer record in struct
@@ -137,6 +184,9 @@ contract KYC{
         // Push kyc request information to kyc request list
         kycList.push(kyc);
 
+        // Change customer KYC status to true
+        // customers[_username].kycStatus = true;
+
         // Increment bank KYC_count
         banks[msg.sender].KYC_count++;
     }
@@ -161,29 +211,36 @@ contract KYC{
     }
 
     // Report Bank
-    function reportBank(address _bnkAddress, string memory _name) public {
+    function reportBank(address _bnkAddress, string memory _name) public isBank(msg.sender) {
         Bank storage b = banks[_bnkAddress];
         require(b.ethAddress==_bnkAddress,"Bank address not found");
         string memory b_name = b.name;
 
-        // Convert strings bank name and input name to bytes32 for easy comparison
-        bytes32 bankName;
-        assembly {
-            bankName := mload(add(b_name,32))
-        }
-        bytes32 inName;
-        assembly {
-            inName := mload(add(_name,32))
-        }
-
-        require(bankName == inName,"Bank name and address do not match");
+        require(convertStr(b_name) == convertStr(_name),"Bank name and address do not match");
         b.complaintsReported++;
 
         validBank(_bnkAddress);
     }
 
-    // Function to modify isAllowedToVote
-    function validBank(address _bnkAddress) public {
+    // Functions for Admin interface
+    // Function to Add Bank
+    function addBank(string memory _name, address _bankAddress, string memory _regNum) public isAdmin(msg.sender){
+        Bank storage b = banks[_bankAddress];
+        b.name = _name;
+        b.ethAddress = _bankAddress;
+        b.complaintsReported = 0;
+        b.KYC_count = 0;
+        b.isAllowedToVote = true;
+        b.regNumber = _regNum;
+    }
 
+    // Funtion to change voting status
+    function bank_isAllowedToVote(address _bnkAddress, bool _vote) public isAdmin(msg.sender) isBank(_bnkAddress){
+        banks[_bnkAddress].isAllowedToVote = _vote;
+    }
+
+    // Funtion to remove bank
+    function removeBank(address _bnkAddress) public isAdmin(msg.sender) isBank(_bnkAddress){
+        delete(banks[_bnkAddress]);
     }
 }
