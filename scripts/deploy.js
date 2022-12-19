@@ -8,7 +8,7 @@ async function main(){
     const kyc = await k.deploy();
     await kyc.deployed();
 
-    console.log('Contract customer deployed to: ',kyc.address);
+    console.log('Contract KYC deployed to: ',kyc.address);
 }
 
 main()
