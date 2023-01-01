@@ -104,7 +104,7 @@ contract KYC{
         kyc_index = 0;
         bankCounter = 0;
 
-        // Adding bank address 
+        // Adding bank address. This part can be used to automate creation of bank accounts
         addBank("Bank A",0x70997970C51812dc3A010C7d01b50e0d17dc79C8,"reg1");
         addBank("Bank B",0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,"reg2");
         addBank("Bank C",0x90F79bf6EB2c4f870365E785982E1f101E93b906,"reg3");
@@ -191,6 +191,7 @@ contract KYC{
         c.Upvotes=0;
         c.Downvotes=0;
         c.Bank=msg.sender;
+        addRequest(_username,_customerData);
     }
 
     // Function to upvote customer
@@ -281,6 +282,8 @@ contract KYC{
 
     // Funtion to remove bank
     function removeBank(address _bnkAddress) public isAdmin(msg.sender) bankExists(_bnkAddress){
+        require(bankCounter>0,"There are no banks in the network. Please create them.");
         delete(banks[_bnkAddress]);
+        bankCounter--;
     }
 }
